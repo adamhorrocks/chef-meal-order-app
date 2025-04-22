@@ -7,10 +7,17 @@ async function runOrder() {
     );
 
     // format the ingredient for the API
-    const formattedIngredient = ingredient
-      .trim()
-      .toLowerCase()
-      .replace(/ /g, "_");
+    let formattedIngredient;
+    if (
+      ingredient === null ||
+      ingredient === undefined ||
+      ingredient.trim().length === 0
+    ) {
+      // no ingredient entered exit runOrder function
+      return;
+    } else {
+      formattedIngredient = ingredient.trim().toLowerCase().replace(" ", "_");
+    }
 
     // fetch meals with the ingredient using the Meal DB API
     let response = await fetch(
@@ -54,13 +61,14 @@ async function runOrder() {
     };
 
     // get current orders from session storage or default to empty array if none
-    let storedOrders = JSON.parse(sessionStorage.getItem("orders")) || [];
+    let currentOrders =
+      JSON.parse(sessionStorage.getItem("currentOrders")) || [];
 
-    // add the new order to the storedOrders list
-    storedOrders.push(newOrder);
+    // add the new order to the current orders list
+    currentOrders.push(newOrder);
 
     // add the updated orders list to session storage
-    sessionStorage.setItem("orders", JSON.stringify(storedOrders));
+    sessionStorage.setItem("currentOrders", JSON.stringify(currentOrders));
 
     // add the last order number (index) to the session storage
     sessionStorage.setItem("lastOrderNumber", nextOrderNumber.toString());
@@ -77,11 +85,11 @@ async function runOrder() {
 
 // function to complete an order
 function completeOrder() {
-  // get the stored orders from the session storage
-  let storedOrders = JSON.parse(sessionStorage.getItem("orders")) || [];
+  // get the current orders from the session storage
+  let currentOrders = JSON.parse(sessionStorage.getItem("currentOrders")) || [];
 
   // filter for incomplete orders
-  let incompleteOrders = storedOrders.filter((order) => !order.completed);
+  let incompleteOrders = currentOrders.filter((order) => !order.completed);
 
   // if there are no imcomplete orders tell the user and exit
   if (incompleteOrders.length === 0) {
@@ -101,13 +109,13 @@ function completeOrder() {
   let orderNumber = parseInt(userOrderNumberChoice);
 
   // check if the user wants to skip
-  if (orderNumber === 0) {
+  if (orderNumber === 0 || isNaN(orderNumber)) {
     alert("No order was completed.");
     return;
   }
 
-  // find the selected order
-  let orderToUpdate = storedOrders.find(
+  // find the selected order using the order number entered
+  let orderToUpdate = currentOrders.find(
     (order) => order.orderNumber === orderNumber
   );
 
@@ -116,7 +124,7 @@ function completeOrder() {
     // mark the order completed
     orderToUpdate.completed = true;
     // update the order in session storage
-    sessionStorage.setItem("orders", JSON.stringify(storedOrders));
+    sessionStorage.setItem("currentOrders", JSON.stringify(currentOrders));
     // tell the user the order was completed
     alert(`Order #${orderNumber} marked as completed.`);
   } else {
